@@ -501,42 +501,30 @@ function iniciarContador() {
 
 /*Parte 3*/
 document.addEventListener("DOMContentLoaded", function () {
-    const popup = document.getElementById("popup");
-    const popupMessage = document.getElementById("popup-message");
-    const closePopup = document.querySelector(".close-btn");
-
-    // Mostrar mensaje emergente
-    window.showMessage = function (message) {
-        popupMessage.innerText = message;
-        popup.style.display = "flex";
-    };
-
-    // Cerrar mensaje emergente
-    closePopup.addEventListener("click", function () {
-        popup.style.display = "none";
-    });
-
-    // Hacer clic en cualquier imagen que no tenga mensaje para agregar uno
-    document.querySelectorAll("#gallery img").forEach(img => {
-        if (!img.onclick) {
-            img.onclick = function () {
-                showMessage("Un recuerdo especial contigo 💕");
-            };
-        }
-    });
-});
-
-
-//SUPABASE//
-document.addEventListener("DOMContentLoaded", function () {
     const cardsContainer = document.getElementById("cards-container");
     const saveCardButton = document.getElementById("save-card");
     const loveLetter = document.getElementById("loveLetter");
 
+    // Función para verificar si localStorage está disponible
+    function isLocalStorageAvailable() {
+        try {
+            const test = '__test__';
+            localStorage.setItem(test, test);
+            localStorage.removeItem(test);
+            return true;
+        } catch (e) {
+            console.error("LocalStorage no está disponible: ", e);
+            return false;
+        }
+    }
+
+    // Verificar disponibilidad de localStorage
+    const storage = isLocalStorageAvailable() ? localStorage : sessionStorage;
+
     // Cargar cartas guardadas
     function loadLetters() {
         cardsContainer.innerHTML = ''; // Limpiar el contenedor
-        const savedLetters = JSON.parse(localStorage.getItem("savedLetters")) || [];
+        const savedLetters = JSON.parse(storage.getItem("savedLetters")) || [];
         savedLetters.forEach(letter => {
             addCardToDOM(letter);
         });
@@ -546,9 +534,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function saveLetter() {
         const letter = loveLetter.value.trim();
         if (letter !== "") {
-            const savedLetters = JSON.parse(localStorage.getItem("savedLetters")) || [];
+            const savedLetters = JSON.parse(storage.getItem("savedLetters")) || [];
             savedLetters.push(letter);
-            localStorage.setItem("savedLetters", JSON.stringify(savedLetters));
+            storage.setItem("savedLetters", JSON.stringify(savedLetters));
             showMessage("Carta guardada con éxito 💖");
             loveLetter.value = ""; // Limpiar el textarea
             loadLetters(); // Recargar todas las cartas
@@ -559,9 +547,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Eliminar carta
     function deleteLetter(text) {
-        let savedLetters = JSON.parse(localStorage.getItem("savedLetters")) || [];
+        let savedLetters = JSON.parse(storage.getItem("savedLetters")) || [];
         savedLetters = savedLetters.filter(letter => letter !== text);
-        localStorage.setItem("savedLetters", JSON.stringify(savedLetters));
+        storage.setItem("savedLetters", JSON.stringify(savedLetters));
         showMessage("Carta eliminada 💔");
         loadLetters(); // Recargar las cartas después de eliminar
     }
@@ -582,9 +570,20 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Función para mostrar mensajes
+    function showMessage(message) {
+        const popupMessage = document.getElementById("popup-message");
+        popupMessage.textContent = message;
+        document.getElementById("popup").style.display = 'block';
+        document.querySelector(".close-btn").addEventListener("click", function() {
+            document.getElementById("popup").style.display = 'none';
+        });
+    }
+
     // Inicializar
     loadLetters();
 
     // Evento para guardar carta
     saveCardButton.addEventListener("click", saveLetter);
 });
+</script>
