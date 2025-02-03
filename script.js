@@ -533,40 +533,82 @@ document.addEventListener("DOMContentLoaded", function () {
     const saveCardButton = document.getElementById("save-card");
     const loveLetter = document.getElementById("loveLetter");
 
-    // Cargar cartas guardadas
-    function loadLetters() {
-        cardsContainer.innerHTML = ''; // Limpiar el contenedor
-        const savedLetters = JSON.parse(localStorage.getItem("savedLetters")) || [];
-        savedLetters.forEach(letter => {
-            addCardToDOM(letter);
+    // Configuración de Supabase
+    const supabaseUrl = 'https://your-project.supabase.co';  // Cambia esto por tu URL
+    const supabaseKey = 'your-anon-key'; // Cambia esto por tu key
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Verificar si la conexión a Supabase está funcionando
+    console.log("Conexión a Supabase establecida");
+
+    // Función para mostrar mensajes
+    function showMessage(message) {
+        const popupMessage = document.getElementById("popup-message");
+        popupMessage.textContent = message;
+        const popup = document.getElementById("popup");
+        popup.style.display = "block";
+        document.querySelector(".close-btn").addEventListener("click", function() {
+            popup.style.display = "none";
         });
     }
 
-    // Guardar carta
-    function saveLetter() {
+    // Función para cargar cartas desde Supabase
+    async function loadLetters() {
+        const { data, error } = await supabase
+            .from('letters')
+            .select('content')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Error al cargar cartas: ", error);
+            return;
+        }
+
+        cardsContainer.innerHTML = ''; // Limpiar el contenedor
+        data.forEach(letter => {
+            addCardToDOM(letter.content);
+        });
+    }
+
+    // Función para guardar carta en Supabase
+    async function saveLetter() {
         const letter = loveLetter.value.trim();
         if (letter !== "") {
-            const savedLetters = JSON.parse(localStorage.getItem("savedLetters")) || [];
-            savedLetters.push(letter);
-            localStorage.setItem("savedLetters", JSON.stringify(savedLetters));
-            showMessage("Carta guardada con éxito 💖");
-            loveLetter.value = ""; // Limpiar el textarea
-            loadLetters(); // Recargar todas las cartas
+            const { data, error } = await supabase
+                .from('letters')
+                .insert([{ content: letter }]);
+
+            if (error) {
+                showMessage("Error al guardar la carta.");
+                console.error(error);
+            } else {
+                console.log("Carta guardada", data);
+                showMessage("Carta guardada con éxito 💖");
+                loveLetter.value = ""; // Limpiar el textarea
+            }
         } else {
             showMessage("Por favor, escribe algo en la carta.");
         }
     }
 
-    // Eliminar carta
-    function deleteLetter(text) {
-        let savedLetters = JSON.parse(localStorage.getItem("savedLetters")) || [];
-        savedLetters = savedLetters.filter(letter => letter !== text);
-        localStorage.setItem("savedLetters", JSON.stringify(savedLetters));
-        showMessage("Carta eliminada 💔");
-        loadLetters(); // Recargar las cartas después de eliminar
+    // Función para eliminar carta
+    async function deleteLetter(content) {
+        const { data, error } = await supabase
+            .from('letters')
+            .delete()
+            .match({ content: content });
+
+        if (error) {
+            showMessage("Error al eliminar la carta.");
+            console.error(error);
+        } else {
+            console.log("Carta eliminada", data);
+            showMessage("Carta eliminada 💔");
+            loadLetters(); // Recargar las cartas después de eliminar
+        }
     }
 
-    // Agregar carta al DOM
+    // Función para agregar carta al DOM
     function addCardToDOM(text) {
         const cardElement = document.createElement("div");
         cardElement.classList.add("saved-card");
@@ -582,7 +624,20 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Inicializar
+    // Suscripción en tiempo real a los cambios en la tabla 'letters'
+    supabase
+        .from('letters')
+        .on('INSERT', payload => {
+            console.log("Nuevo insert recibido: ", payload);
+            addCardToDOM(payload.new.content);
+        })
+        .on('DELETE', payload => {
+            console.log("Evento delete recibido: ", payload);
+            loadLetters(); // Recargar las cartas después de una eliminación
+        })
+        .subscribe();
+
+    // Inicializar la carga de cartas
     loadLetters();
 
     // Evento para guardar carta
