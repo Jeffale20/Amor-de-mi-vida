@@ -534,8 +534,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const loveLetter = document.getElementById("loveLetter");
 
     // Configuración de Supabase
-    const supabaseUrl = 'https://your-project.supabase.co';  // Cambia esto por tu URL
-    const supabaseKey = 'your-anon-key'; // Cambia esto por tu key
+    const supabaseUrl = 'https://kigcjonbxauqvkztwecu.supabase.co';  // Cambia esto por tu URL
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpZ2Nqb25ieGF1cXZrenR3ZWN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1NTE0MzcsImV4cCI6MjA1NDEyNzQzN30.jgBNaHVIMBg9YeV-l49LJzyHAbWzuhUMAywXg_uXZWs'; // Cambia esto por tu key
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     // Verificar si la conexión a Supabase está funcionando
