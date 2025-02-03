@@ -500,14 +500,10 @@ function iniciarContador() {
 }
 
 /*Parte 3*/
-
 document.addEventListener("DOMContentLoaded", function () {
     const popup = document.getElementById("popup");
     const popupMessage = document.getElementById("popup-message");
     const closePopup = document.querySelector(".close-btn");
-    const cardsContainer = document.getElementById("cards-container");
-    const saveCardButton = document.getElementById("save-card");
-    const cardTextInput = document.getElementById("card-text");
 
     // Mostrar mensaje emergente
     window.showMessage = function (message) {
@@ -528,6 +524,14 @@ document.addEventListener("DOMContentLoaded", function () {
             };
         }
     });
+});
+
+
+//SUPABASE//
+document.addEventListener("DOMContentLoaded", function () {
+    const cardsContainer = document.getElementById("cards-container");
+    const saveCardButton = document.getElementById("save-card");
+    const loveLetter = document.getElementById("loveLetter");
 
     // Cargar cartas guardadas
     function loadLetters() {
