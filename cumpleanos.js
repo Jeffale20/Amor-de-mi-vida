@@ -63,8 +63,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Puzzle de una Foto Especial
     const imageSelection = document.querySelectorAll(".selectable-image");
     let selectedImage = "";
-    const boardSize = 300; // Tamaño del tablero
-    const puzzleSize = 3; // Tamaño 3x3
+    let puzzleSize = 3; // 3x3 puzzle
+    let boardSize = Math.min(window.innerWidth * 0.8, 350); // Ajuste dinámico del tamaño del tablero
     let pieceWidth, pieceHeight;
     let puzzlePieces = [];
     let placedPieces = 0;
@@ -75,14 +75,13 @@ document.addEventListener("DOMContentLoaded", function () {
         "Imagenes/puzzle3.jpg": "Eres mi refugio, mi paz y mi destino, la razón por la que todo en mi vida tiene color. 🌟 **seré**",
         "Imagenes/puzzle4.jpg": "Como este rompecabezas, nuestro amor está lleno de momentos perfectos que nos iluminan. 💫 **tu luz en la oscuridad**"
     };
-    
 
-    // Selección de imagen
+    // Evento de selección de imagen
     imageSelection.forEach(image => {
         image.addEventListener("click", () => {
             selectedImage = image.src;
             guideImage.src = selectedImage;
-            guideImage.style.width = `${boardSize}px`; 
+            guideImage.style.width = `${boardSize}px`;
             guideImage.style.height = `${boardSize}px`;
 
             imageSelection.forEach(img => img.classList.remove("selected"));
@@ -90,6 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // Evento del botón "Jugar"
     startButton.addEventListener("click", () => {
         if (!selectedImage) {
             alert("Por favor, selecciona una imagen primero.");
@@ -127,8 +127,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 piece.dataset.row = row;
                 piece.dataset.col = col;
                 piece.draggable = true;
+
+                // Eventos de arrastrar (para PC)
                 piece.addEventListener("dragstart", dragStart);
                 piece.addEventListener("dragend", dragEnd);
+
+                // Eventos táctiles (para celulares)
+                piece.addEventListener("touchstart", touchStart, { passive: false });
+                piece.addEventListener("touchmove", touchMove, { passive: false });
+                piece.addEventListener("touchend", touchEnd);
 
                 puzzlePieces.push(piece);
             }
@@ -156,6 +163,48 @@ document.addEventListener("DOMContentLoaded", function () {
         event.target.classList.remove("dragging");
     }
 
+    // Eventos táctiles para móviles
+    let currentTouchPiece = null;
+
+    function touchStart(event) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        currentTouchPiece = event.target;
+        currentTouchPiece.style.zIndex = "10";
+        currentTouchPiece.startX = touch.clientX - currentTouchPiece.offsetLeft;
+        currentTouchPiece.startY = touch.clientY - currentTouchPiece.offsetTop;
+    }
+
+    function touchMove(event) {
+        event.preventDefault();
+        if (!currentTouchPiece) return;
+        const touch = event.touches[0];
+        currentTouchPiece.style.left = `${touch.clientX - currentTouchPiece.startX}px`;
+        currentTouchPiece.style.top = `${touch.clientY - currentTouchPiece.startY}px`;
+    }
+
+    function touchEnd(event) {
+        event.preventDefault();
+        if (!currentTouchPiece) return;
+        currentTouchPiece.style.zIndex = "1";
+
+        // Verificar si está en la posición correcta
+        const rect = puzzleBoard.getBoundingClientRect();
+        const pieceRect = currentTouchPiece.getBoundingClientRect();
+        const row = Math.round((pieceRect.top - rect.top) / pieceHeight);
+        const col = Math.round((pieceRect.left - rect.left) / pieceWidth);
+
+        if (row == currentTouchPiece.dataset.row && col == currentTouchPiece.dataset.col) {
+            currentTouchPiece.style.left = `${col * pieceWidth}px`;
+            currentTouchPiece.style.top = `${row * pieceHeight}px`;
+            puzzleBoard.appendChild(currentTouchPiece);
+            placedPieces++;
+            checkWinCondition();
+        }
+
+        currentTouchPiece = null;
+    }
+
     puzzleBoard.addEventListener("dragover", (event) => {
         event.preventDefault();
     });
@@ -174,14 +223,12 @@ document.addEventListener("DOMContentLoaded", function () {
             checkWinCondition();
         }
     });
-    
+
     function checkWinCondition() {
         if (placedPieces === puzzlePieces.length) {
-            // Buscar la clave correcta en el objeto messages
             const imagePath = Object.keys(messages).find(key => selectedImage.includes(key));
-    
             if (imagePath && messages[imagePath]) {
-                puzzleGameResult.textContent = messages[imagePath]; // Mostrar el mensaje correspondiente
+                puzzleGameResult.textContent = messages[imagePath];
             }
         }
     }
