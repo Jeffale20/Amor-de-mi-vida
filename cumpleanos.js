@@ -61,13 +61,11 @@ document.addEventListener("DOMContentLoaded", function () {
  
 
     // Puzzle de una Foto Especial
-    // Puzzle de una Foto Especial
-    const imageSelection = document.querySelectorAll(".selectable-image");
     let selectedImage = "";
-    const boardSize = 300; // Tamaño del tablero
-    const puzzleSize = 3; // Tamaño 3x3
+    const boardSize = 300;
+    const puzzleSize = 3;
     let pieceWidth, pieceHeight;
-    let puzzlePieces = [];
+    let selectedPiece = null;
     let placedPieces = 0;
 
     const messages = {
@@ -77,18 +75,14 @@ document.addEventListener("DOMContentLoaded", function () {
         "Imagenes/puzzle4.jpg": "Como este rompecabezas, nuestro amor está lleno de momentos perfectos que nos iluminan. 💫 **tu luz en la oscuridad**"
     };
 
-    // 📌 Detectar si es un dispositivo táctil
-    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-
-    // Selección de imagen
-    imageSelection.forEach(image => {
+    document.querySelectorAll(".selectable-image").forEach(image => {
         image.addEventListener("click", () => {
             selectedImage = image.src;
             guideImage.src = selectedImage;
             guideImage.style.width = `${boardSize}px`;
             guideImage.style.height = `${boardSize}px`;
 
-            imageSelection.forEach(img => img.classList.remove("selected"));
+            document.querySelectorAll(".selectable-image").forEach(img => img.classList.remove("selected"));
             image.classList.add("selected");
         });
     });
@@ -106,21 +100,20 @@ document.addEventListener("DOMContentLoaded", function () {
         guideImage.classList.remove("oculto");
         puzzleBoard.innerHTML = "";
         puzzlePiecesContainer.innerHTML = "";
-        puzzlePieces = [];
         placedPieces = 0;
 
         puzzleBoard.style.width = `${boardSize}px`;
         puzzleBoard.style.height = `${boardSize}px`;
-
         puzzlePiecesContainer.style.width = `${boardSize}px`;
         puzzlePiecesContainer.style.height = `${boardSize}px`;
 
         pieceWidth = boardSize / puzzleSize;
         pieceHeight = boardSize / puzzleSize;
 
+        let pieces = [];
         for (let row = 0; row < puzzleSize; row++) {
             for (let col = 0; col < puzzleSize; col++) {
-                const piece = document.createElement("div");
+                let piece = document.createElement("div");
                 piece.classList.add("puzzle-piece");
                 piece.style.width = `${pieceWidth}px`;
                 piece.style.height = `${pieceHeight}px`;
@@ -129,120 +122,56 @@ document.addEventListener("DOMContentLoaded", function () {
                 piece.style.backgroundPosition = `${-col * pieceWidth}px ${-row * pieceHeight}px`;
                 piece.dataset.row = row;
                 piece.dataset.col = col;
-                piece.draggable = !isTouchDevice; // Solo habilitar "draggable" en PC
-
-                if (isTouchDevice) {
-                    piece.addEventListener("touchstart", touchStart);
-                    piece.addEventListener("touchmove", touchMove);
-                    piece.addEventListener("touchend", touchEnd);
-                } else {
-                    piece.addEventListener("dragstart", dragStart);
-                    piece.addEventListener("dragend", dragEnd);
-                }
-
-                puzzlePieces.push(piece);
+                piece.addEventListener("click", selectPiece);
+                pieces.push(piece);
             }
         }
 
-        shufflePuzzle();
-    }
+        pieces.sort(() => Math.random() - 0.5);
+        pieces.forEach(piece => puzzlePiecesContainer.appendChild(piece));
 
-    function shufflePuzzle() {
-        puzzlePieces.sort(() => Math.random() - 0.5);
-        puzzlePieces.forEach(piece => {
-            piece.style.position = "absolute";
-            piece.style.left = `${Math.random() * (boardSize - pieceWidth)}px`;
-            piece.style.top = `${Math.random() * (boardSize - pieceHeight)}px`;
-            puzzlePiecesContainer.appendChild(piece);
-        });
-    }
-
-    // 🖱️ Funciones para PC (Drag & Drop)
-    function dragStart(event) {
-        event.dataTransfer.setData("text/plain", event.target.dataset.row + "," + event.target.dataset.col);
-        setTimeout(() => event.target.classList.add("dragging"), 0);
-    }
-
-    function dragEnd(event) {
-        event.target.classList.remove("dragging");
-    }
-
-    puzzleBoard.addEventListener("dragover", (event) => {
-        event.preventDefault();
-    });
-
-    puzzleBoard.addEventListener("drop", (event) => {
-        event.preventDefault();
-        const [row, col] = event.dataTransfer.getData("text/plain").split(",");
-        const piece = puzzlePieces.find(p => p.dataset.row == row && p.dataset.col == col);
-
-        if (piece) {
-            placePiece(piece, row, col);
+        for (let row = 0; row < puzzleSize; row++) {
+            for (let col = 0; col < puzzleSize; col++) {
+                let slot = document.createElement("div");
+                slot.classList.add("puzzle-slot");
+                slot.style.width = `${pieceWidth}px`;
+                slot.style.height = `${pieceHeight}px`;
+                slot.dataset.row = row;
+                slot.dataset.col = col;
+                slot.addEventListener("click", placePiece);
+                puzzleBoard.appendChild(slot);
+            }
         }
-    });
+    }
 
-    // 📲 Funciones para dispositivos móviles (Touch)
-    let selectedPiece = null;
-    let offsetX, offsetY;
-
-    function touchStart(event) {
+    function selectPiece(event) {
         selectedPiece = event.target;
-        const touch = event.touches[0];
-
-        // Guardar la posición inicial dentro de la pieza
-        offsetX = touch.clientX - selectedPiece.getBoundingClientRect().left;
-        offsetY = touch.clientY - selectedPiece.getBoundingClientRect().top;
-
-        selectedPiece.style.position = "absolute";
-        selectedPiece.style.opacity = "0.7";
+        document.querySelectorAll(".puzzle-piece").forEach(piece => piece.classList.remove("selected-piece"));
+        selectedPiece.classList.add("selected-piece");
     }
 
-    function touchMove(event) {
+    function placePiece(event) {
         if (!selectedPiece) return;
-        const touch = event.touches[0];
+        let slot = event.target;
 
-        // Mover la pieza con el dedo
-        selectedPiece.style.left = `${touch.clientX - offsetX}px`;
-        selectedPiece.style.top = `${touch.clientY - offsetY}px`;
-    }
-
-    function touchEnd(event) {
-        if (!selectedPiece) return;
-
-        selectedPiece.style.opacity = "1";
-
-        // Detectar la celda más cercana en el tablero
-        const closestCell = document.elementFromPoint(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
-
-        if (closestCell && closestCell.id === "puzzleGameBoard") {
-            const row = selectedPiece.dataset.row;
-            const col = selectedPiece.dataset.col;
-            placePiece(selectedPiece, row, col);
-        } else {
-            // Si no está en una celda válida, devolver la pieza
-            selectedPiece.style.left = "";
-            selectedPiece.style.top = "";
+        if (slot.dataset.row === selectedPiece.dataset.row && slot.dataset.col === selectedPiece.dataset.col) {
+            slot.appendChild(selectedPiece);
             selectedPiece.style.position = "absolute";
+            selectedPiece.style.left = "0";
+            selectedPiece.style.top = "0";
+            selectedPiece.classList.remove("selected-piece");
+            selectedPiece.removeEventListener("click", selectPiece);
+            selectedPiece = null;
+            placedPieces++;
+            checkWinCondition();
         }
-
-        selectedPiece = null;
-    }
-
-    // 📌 Coloca la pieza correctamente en el tablero
-    function placePiece(piece, row, col) {
-        piece.style.position = "absolute";
-        piece.style.left = `${col * pieceWidth}px`;
-        piece.style.top = `${row * pieceHeight}px`;
-        puzzleBoard.appendChild(piece);
-        placedPieces++;
-        checkWinCondition();
     }
 
     function checkWinCondition() {
-        if (placedPieces === puzzlePieces.length) {
-            const imagePath = Object.keys(messages).find(key => selectedImage.includes(key));
+        if (placedPieces === puzzleSize * puzzleSize) {
+            let imagePath = Object.keys(messages).find(key => selectedImage.includes(key));
             if (imagePath && messages[imagePath]) {
-                puzzleResult.textContent = messages[imagePath]; // Mostrar el mensaje correspondiente
+                puzzleResult.textContent = messages[imagePath];
             }
         }
     }
