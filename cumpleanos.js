@@ -61,10 +61,11 @@ document.addEventListener("DOMContentLoaded", function () {
  
 
     // Puzzle de una Foto Especial
+    // Puzzle de una Foto Especial
     const imageSelection = document.querySelectorAll(".selectable-image");
     let selectedImage = "";
-    let puzzleSize = 3; // 3x3 puzzle
-    let boardSize = Math.min(window.innerWidth * 0.8, 350); // Ajuste dinámico del tamaño del tablero
+    const boardSize = 300; // Tamaño del tablero
+    const puzzleSize = 3; // Tamaño 3x3
     let pieceWidth, pieceHeight;
     let puzzlePieces = [];
     let placedPieces = 0;
@@ -76,7 +77,10 @@ document.addEventListener("DOMContentLoaded", function () {
         "Imagenes/puzzle4.jpg": "Como este rompecabezas, nuestro amor está lleno de momentos perfectos que nos iluminan. 💫 **tu luz en la oscuridad**"
     };
 
-    // Evento de selección de imagen
+    // 📌 Detectar si es un dispositivo táctil
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+    // Selección de imagen
     imageSelection.forEach(image => {
         image.addEventListener("click", () => {
             selectedImage = image.src;
@@ -89,7 +93,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Evento del botón "Jugar"
     startButton.addEventListener("click", () => {
         if (!selectedImage) {
             alert("Por favor, selecciona una imagen primero.");
@@ -126,16 +129,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 piece.style.backgroundPosition = `${-col * pieceWidth}px ${-row * pieceHeight}px`;
                 piece.dataset.row = row;
                 piece.dataset.col = col;
-                piece.draggable = true;
+                piece.draggable = !isTouchDevice; // Solo habilitar "draggable" en PC
 
-                // Eventos de arrastrar (para PC)
-                piece.addEventListener("dragstart", dragStart);
-                piece.addEventListener("dragend", dragEnd);
-
-                // Eventos táctiles (para celulares)
-                piece.addEventListener("touchstart", touchStart, { passive: false });
-                piece.addEventListener("touchmove", touchMove, { passive: false });
-                piece.addEventListener("touchend", touchEnd);
+                if (isTouchDevice) {
+                    piece.addEventListener("touchstart", touchStart);
+                    piece.addEventListener("touchmove", touchMove);
+                    piece.addEventListener("touchend", touchEnd);
+                } else {
+                    piece.addEventListener("dragstart", dragStart);
+                    piece.addEventListener("dragend", dragEnd);
+                }
 
                 puzzlePieces.push(piece);
             }
@@ -154,6 +157,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // 🖱️ Funciones para PC (Drag & Drop)
     function dragStart(event) {
         event.dataTransfer.setData("text/plain", event.target.dataset.row + "," + event.target.dataset.col);
         setTimeout(() => event.target.classList.add("dragging"), 0);
@@ -161,48 +165,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function dragEnd(event) {
         event.target.classList.remove("dragging");
-    }
-
-    // Eventos táctiles para móviles
-    let currentTouchPiece = null;
-
-    function touchStart(event) {
-        event.preventDefault();
-        const touch = event.touches[0];
-        currentTouchPiece = event.target;
-        currentTouchPiece.style.zIndex = "10";
-        currentTouchPiece.startX = touch.clientX - currentTouchPiece.offsetLeft;
-        currentTouchPiece.startY = touch.clientY - currentTouchPiece.offsetTop;
-    }
-
-    function touchMove(event) {
-        event.preventDefault();
-        if (!currentTouchPiece) return;
-        const touch = event.touches[0];
-        currentTouchPiece.style.left = `${touch.clientX - currentTouchPiece.startX}px`;
-        currentTouchPiece.style.top = `${touch.clientY - currentTouchPiece.startY}px`;
-    }
-
-    function touchEnd(event) {
-        event.preventDefault();
-        if (!currentTouchPiece) return;
-        currentTouchPiece.style.zIndex = "1";
-
-        // Verificar si está en la posición correcta
-        const rect = puzzleBoard.getBoundingClientRect();
-        const pieceRect = currentTouchPiece.getBoundingClientRect();
-        const row = Math.round((pieceRect.top - rect.top) / pieceHeight);
-        const col = Math.round((pieceRect.left - rect.left) / pieceWidth);
-
-        if (row == currentTouchPiece.dataset.row && col == currentTouchPiece.dataset.col) {
-            currentTouchPiece.style.left = `${col * pieceWidth}px`;
-            currentTouchPiece.style.top = `${row * pieceHeight}px`;
-            puzzleBoard.appendChild(currentTouchPiece);
-            placedPieces++;
-            checkWinCondition();
-        }
-
-        currentTouchPiece = null;
     }
 
     puzzleBoard.addEventListener("dragover", (event) => {
@@ -215,20 +177,72 @@ document.addEventListener("DOMContentLoaded", function () {
         const piece = puzzlePieces.find(p => p.dataset.row == row && p.dataset.col == col);
 
         if (piece) {
-            piece.style.position = "absolute";
-            piece.style.left = `${col * pieceWidth}px`;
-            piece.style.top = `${row * pieceHeight}px`;
-            puzzleBoard.appendChild(piece);
-            placedPieces++;
-            checkWinCondition();
+            placePiece(piece, row, col);
         }
     });
+
+    // 📲 Funciones para dispositivos móviles (Touch)
+    let selectedPiece = null;
+    let offsetX, offsetY;
+
+    function touchStart(event) {
+        selectedPiece = event.target;
+        const touch = event.touches[0];
+
+        // Guardar la posición inicial dentro de la pieza
+        offsetX = touch.clientX - selectedPiece.getBoundingClientRect().left;
+        offsetY = touch.clientY - selectedPiece.getBoundingClientRect().top;
+
+        selectedPiece.style.position = "absolute";
+        selectedPiece.style.opacity = "0.7";
+    }
+
+    function touchMove(event) {
+        if (!selectedPiece) return;
+        const touch = event.touches[0];
+
+        // Mover la pieza con el dedo
+        selectedPiece.style.left = `${touch.clientX - offsetX}px`;
+        selectedPiece.style.top = `${touch.clientY - offsetY}px`;
+    }
+
+    function touchEnd(event) {
+        if (!selectedPiece) return;
+
+        selectedPiece.style.opacity = "1";
+
+        // Detectar la celda más cercana en el tablero
+        const closestCell = document.elementFromPoint(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
+
+        if (closestCell && closestCell.id === "puzzleGameBoard") {
+            const row = selectedPiece.dataset.row;
+            const col = selectedPiece.dataset.col;
+            placePiece(selectedPiece, row, col);
+        } else {
+            // Si no está en una celda válida, devolver la pieza
+            selectedPiece.style.left = "";
+            selectedPiece.style.top = "";
+            selectedPiece.style.position = "absolute";
+        }
+
+        selectedPiece = null;
+    }
+
+    // 📌 Coloca la pieza correctamente en el tablero
+    function placePiece(piece, row, col) {
+        piece.style.position = "absolute";
+        piece.style.left = `${col * pieceWidth}px`;
+        piece.style.top = `${row * pieceHeight}px`;
+        puzzleBoard.appendChild(piece);
+        placedPieces++;
+        checkWinCondition();
+    }
 
     function checkWinCondition() {
         if (placedPieces === puzzlePieces.length) {
             const imagePath = Object.keys(messages).find(key => selectedImage.includes(key));
             if (imagePath && messages[imagePath]) {
-                puzzleGameResult.textContent = messages[imagePath];
+                puzzleResult.textContent = messages[imagePath]; // Mostrar el mensaje correspondiente
             }
         }
     }
