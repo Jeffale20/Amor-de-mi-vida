@@ -184,12 +184,14 @@
         <h2>🧩 Uniendo las Piezas de Nuestro Amor 💖</h2>
         <p>Cada pieza de este rompecabezas es un pedacito de nuestra historia, un reflejo de los momentos que nos han hecho inseparables.✨</p>
         <p>Selecciona una imagen para armar, descubre el mensaje oculto al armar las 4 fotos:</p>
-        <div class="image-selection">
-            <img class="selectable-image" src="Imagenes/puzzle1.jpg" alt="Imagen 1">
-            <img class="selectable-image" src="Imagenes/puzzle2.jpg" alt="Imagen 2">
-            <img class="selectable-image" src="Imagenes/puzzle3.jpg" alt="Imagen 3">
-            <img class="selectable-image" src="Imagenes/puzzle4.jpg" alt="Imagen 4">
+ 
+        <div class="image-selection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+            <img class="selectable-image" src="Imagenes/puzzle1.jpg" alt="Imagen 1" style="width: 45%; max-width: 150px;">
+            <img class="selectable-image" src="Imagenes/puzzle2.jpg" alt="Imagen 2" style="width: 45%; max-width: 150px;">
+            <img class="selectable-image" src="Imagenes/puzzle3.jpg" alt="Imagen 3" style="width: 45%; max-width: 150px;">
+            <img class="selectable-image" src="Imagenes/puzzle4.jpg" alt="Imagen 4" style="width: 45%; max-width: 150px;">
         </div>
+
     
         <button id="startPuzzleGameButton" class="start-button">Jugar</button>
     
@@ -204,7 +206,7 @@
                 <!-- Tablero del rompecabezas -->
                 <div class="puzzle-section">
                     <h3>Tablero del rompecabezas</h3>
-                    <div id="puzzleGameBoard" class="game-board">
+                    <div id="puzzleGameBoard" class="game-board" style="width: 100%; max-width: 400px; height: auto;">
                         <img id="guideImage" src="" alt="Imagen guía" class="guide-image">
                     </div>
                 </div>
